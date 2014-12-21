@@ -1,21 +1,25 @@
-<?php
+    <?php
 
 $params = require(__DIR__ . '/params.php');
 
 $config = [
     'id' => 'kinder-menu',
+    'language' => 'ru_RU',
     'basePath' => dirname(__DIR__),
     'bootstrap' => ['log'],
     'components' => [
         'request' => [
             // !!! insert a secret key in the following (if it is empty) - this is required by cookie validation
             'cookieValidationKey' => '_ThpicoOqT-2wO_sk5OYknU-5NImGKCA',
+            'parsers' => [
+                'application/json' => 'yii\web\JsonParser',
+            ],
         ],
         'cache' => [
             'class' => 'yii\caching\FileCache',
         ],
         'user' => [
-            'identityClass' => 'app\models\User',
+            'identityClass' => 'app\models\Users',
             'enableAutoLogin' => true,
         ],
         'errorHandler' => [
@@ -65,7 +69,10 @@ if (YII_ENV_DEV) {
     $config['modules']['debug'] = 'yii\debug\Module';
 
     $config['bootstrap'][] = 'gii';
-    $config['modules']['gii'] = 'yii\gii\Module';
+    $config['modules']['gii'] = [
+            'class' => 'yii\gii\Module',
+            'allowedIPs' => ['192.168.10.*', ],
+        ];
 }
 
 return $config;
