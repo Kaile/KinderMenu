@@ -19,10 +19,10 @@ $this->title = $name;
 	</div>
 
 	<p>
-		<?=Yii::t('app', 'The above error occurred while the Web server was processing your request.')?>
+		Указанная выше ошибка произошла во время выполнения Вашего запроса
 	</p>
 	<p>
-		<?=Yii::t('app', 'Please contact us if you think this is a server error. Thank you.')?>
+		Пожалуйста, свяжитесь с нами, если считаете, что это ошибка сервера. Спасибо.
 	</p>
 
 </div>
