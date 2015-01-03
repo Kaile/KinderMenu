@@ -45,6 +45,15 @@ $config = [
         'urlManager' => [
             'enablePrettyUrl' => true,
             'showScriptName' => false,
+            'rules' => [
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'measure'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'unit'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'ingridient'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'portion'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'consist'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'dish'],
+                ['class' => 'yii\rest\UrlRule', 'controller' => 'ingestion'],
+            ],
         ],
         'i18n' => [
             'translations' => [
