@@ -17,6 +17,7 @@ Thumbs.db
 
 # composer itself is not needed
 composer.phar
+composer.lock
 
 # Mac DS_Store Files
 .DS_Store
@@ -28,3 +29,24 @@ phpunit.phar
 
 #vagrant config directory
 .vagrant
+
+#cache files
+*.cache
+cache.*
+web/js/build/.module-cache/
+cache
+
+#temporary files
+*.tmp
+tmp.*
+temp.*
+*.temp
+tmp
+temp
+
+#test and demo files
+demo.*
+*.demo
+test.*
+*.test
+demo

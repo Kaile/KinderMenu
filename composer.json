@@ -2,7 +2,6 @@
     "name": "Kaile/kinder-menu",
     "description": "The site for playschool menu generation",
     "keywords": ["kinder", "menu", "playschool", "children"],
-    "homepage": "",
     "type": "project",
     "license": "MIT",
     "support": {
@@ -17,7 +16,9 @@
         "php": ">=5.4.0",
         "yiisoft/yii2": "*",
         "yiisoft/yii2-bootstrap": "*",
-        "yiisoft/yii2-swiftmailer": "*"
+        "yiisoft/yii2-swiftmailer": "*",
+        "bower-asset/react": "0.12.*",
+        "bower-asset/jquery.rest": "~1.0"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",
