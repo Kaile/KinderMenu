@@ -18,6 +18,9 @@ use yii\web\AssetBundle;
 class JqRestAsset extends AssetBundle
 {
 	public $sourcePath = '@bower/jquery.rest/dist';
+	public $depends = [
+		'yii\web\JqueryAsset',
+	];
 	public $js = [
 		'jquery.rest.min.js',
 	];
