@@ -50,3 +50,6 @@ demo.*
 test.*
 *.test
 demo
+
+#log files
+*.log
