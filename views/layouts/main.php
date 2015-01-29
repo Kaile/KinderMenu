@@ -26,7 +26,7 @@ AppAsset::register($this);
     <div class="wrap">
         <?php
             NavBar::begin([
-                'brandLabel' => Yii::t('app', 'Kinder Menu'),
+                'brandLabel' => 'Меню для ДОУ',
                 'brandUrl' => Yii::$app->homeUrl,
                 'options' => [
                     'class' => 'navbar-inverse navbar-fixed-top',
@@ -35,11 +35,11 @@ AppAsset::register($this);
             echo Nav::widget([
                 'options' => ['class' => 'navbar-nav navbar-right'],
                 'items' => [
-                    ['label' => Yii::t('app', 'Home'), 'url' => ['/site/index']],
+                    ['label' => 'Меню', 'url' => ['/site/menu']],
                 ],
             ]);
             NavBar::end();
-            
+
         ?>
 
         <div class="container">
