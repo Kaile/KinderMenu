@@ -2,7 +2,7 @@
 
 namespace app\modules\v1\controllers;
 
-class MenuController extends \yii\rest\ActiveController
+class MenuController extends \app\modules\common\controllers\RestController
 {
 	public $modelClass = 'app\modules\v1\models\Menus';
 

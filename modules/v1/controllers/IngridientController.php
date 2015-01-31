@@ -2,7 +2,7 @@
 
 namespace app\modules\v1\controllers;
 
-class IngridientController extends \yii\rest\ActiveController
+class IngridientController extends \app\modules\common\controllers\RestController
 {
 	public $modelClass = 'app\modules\v1\models\Ingridients';
 }
