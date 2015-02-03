@@ -2,7 +2,7 @@
 
 return [
 	[
-		'class' => 'app\modules\common\routes\BaseUrlRule', 
+		'class' => 'app\modules\common\routes\BaseUrlRule',
 		'controller' => [
 			'v1/measure',
 			'v1/unit',
@@ -13,6 +13,7 @@ return [
 			'v1/ingestion',
 			'v1/menu',
 			'v1/demo',
+			'v1/menu-dishes',
 		],
 	],
 ];

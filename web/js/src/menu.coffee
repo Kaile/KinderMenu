@@ -2,22 +2,29 @@ client = new $.RestClient '/v1/'
 
 client.add 'ingestions'
 client.add 'menus'
+client.add 'menu-dishes'
 client.add 'dishes'
 client.add 'portions'
 client.add 'ingridients'
+client.add 'units'
 
+# First yes parameter is the allows thrown errors at once
 # Second yes parameter is the debug option for Checker
 checker = new $.Checker yes, yes
 
 Menu = React.createClass(
     getInitialState: ->
         ingestions: []
-        menus: []
+        menu: []
         date: new Date
 
     componentDidMount: ->
         client.menus.read(date: @state.date).done (data) =>
-            @setState ingestions: data if checker.check data, 'Read menu by it date'
+            if data.length
+                @setState menu: data if checker.check data, 'Read menu by it date'
+
+        client.ingestions.read().done (data) =>
+            @setState ingestions: data if checker.check data, 'Load ingestion list for menu'
 
     render: ->
         <div className="panel panel-default">
@@ -52,7 +59,7 @@ Menu = React.createClass(
                         </h4>
                     </th>
                 </thead>
-                <MenuList ingestions={@state.ingestions} menus={@state.menus}/>
+                <MenuList ingestions={@state.ingestions} menuId={@state.menu.id}/>
             </table>
             <div className="panel-footer">Итоговый состав:</div>
         </div>
@@ -73,7 +80,7 @@ MenuList = React.createClass(
                         </h4>
                     </td>
                     <td>
-                        <DishList />
+                        <MenuDishList menuId={@props.menuId} ingestionId={@props.ingestions[i].id} />
                         <DishAddButton />
                     </td>
                 </tr>
@@ -84,7 +91,7 @@ MenuList = React.createClass(
         </tbody>
 )
 
-DishList = React.createClass(
+MenuDishList = React.createClass(
     getInitialState: ->
         dishes: []
 
@@ -92,8 +99,11 @@ DishList = React.createClass(
         loadedDishes = []
 
         #TODO: Переделать на загрузку блюд из этого меню
-        client.dishes.read().done (data) =>
-            return if not checker.check data, 'Read dishes by menu id'
+        client['menu-dishes'].read(
+            menu_id: @props.menuId
+            ingestion_id: @props.ingestionId
+        ).done (data) =>
+            return if not checker.check data, 'Read dishes by menu id and ingestion id'
 
             for i in [0...data.length]
                 loadedDishes.push <Dish dish={data[i]} />
@@ -124,8 +134,7 @@ ConsistList = React.createClass(
 
         consists = []
 
-        #TODO: проверить правильно ли работает чтение значений
-        client.dishes.read(@props.dishId).consists().done (data) =>
+        client.consists.read(dish_id: @props.dishId).done (data) =>
             return if not checker.check data, 'Read consists by dish id'
 
             for i in [0...data.length]
@@ -142,7 +151,7 @@ ConsistList = React.createClass(
 Consist = React.createClass(
     render: ->
         <span className="label label-info">
-            {@props.consist.name}:{@props.consist.portion}
+            {@props.consist.name}: {@props.consist.size}
         </span>
 )
 
@@ -161,14 +170,7 @@ DishAdd = React.createClass(
         elemCount: 0
 
     render: ->
-        if @state.elemCount > 0
-            <DishAddList onCountUpdate={@handleCountUpdate} />
-        else
-            <div>
-                <br/>
-                Блюд еще нет, создайте свое первое блюдо на
-                вкладке "Создание блюда"
-            </div>
+        <DishAddList onCountUpdate={@handleCountUpdate} />
 
     handleCountUpdate: (count) ->
         @setState(elemCount: count)
@@ -226,16 +228,43 @@ Ingridient = React.createClass(
 
 #TODO: сделать отображение и выбор единиц измерения
 UnitList = React.createClass(
-    render: ->
-        <div></div>
-)
+    currUnitId: 0
 
-Unit = React.createClass(
+    getInitialState: ->
+        units: []
+        currUnit:
+            id: 0
+            name: '????'
+
+    componentDidMount: ->
+        client.units.read().done (data) =>
+            return if not checker.check data, 'Read all units in add dish dialog'
+
+            @setState
+                units: data
+                currUnit:
+                    id: data[@currUnitId].id
+                    name: data[@currUnitId].name
+
     render: ->
-        <li role="presentation"><a role="menuitem" tabindex="-1" href="#">метр</a></li>
+        <div className="input-group">
+            <input id="portion-new" type="text" className="form-control" placeholder="Количество"/>
+            <span onClick={@changeUnits} unitId={@state.currUnit.id} title="Кликните для смены единиц измерения" className="input-group-addon">{@state.currUnit.name}</span>
+        </div>
+
+    changeUnits: ->
+        maxId = @state.units.length - 1
+        if ++@currUnitId > maxId
+            @currUnitId = 0
+        unit = @state.units[@currUnitId]
+
+        @setState
+            currUnit:
+                name: unit.name
+                id: unit.id
 )
 
 React.render <Menu />, $('#menu').get 0
 React.render <DishAdd />, $('#menu-dish-add').get 0
 React.render <IngridientList />, $('#menu-ingridient-list').get 0
-# React.render <UnitList />, $('#menu-unit-list').get 0
+React.render <UnitList />, $('.menu-unit-list').get 0

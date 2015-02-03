@@ -46,31 +46,7 @@
                                         </div>
                                     </div>
                                     <div class="col-lg-5">
-                                        <div class="input-group">
-                                            <div class="input-group">
-                                                <input id="portion-new" type="text" class="form-control" placeholder="Укажите объем"/>
-                                                <span class="input-group-addon">грамм</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-lg-7">
-                                        <div class="input-group">
-                                            <div class="input-group-btn" id="menu-ingridient-list">
-                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                                    Выберите или <span class="caret"></span>
-                                                </button>
-                                            </div>
-                                            <input id="ingridient-new" type="text" class="form-control" placeholder="введите ингридиент"/>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-5">
-                                        <div class="input-group">
-                                            <div class="input-group">
-                                                <input id="portion-new" type="text" class="form-control" placeholder="Укажите объем"/>
-                                                <span class="input-group-addon">грамм</span>
-                                            </div>
+                                        <div class="input-group menu-unit-list">
                                         </div>
                                     </div>
                                 </div>

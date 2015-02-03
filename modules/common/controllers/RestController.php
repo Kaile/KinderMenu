@@ -24,6 +24,12 @@ class RestController extends \yii\rest\ActiveController
             'checkAccess' => [$this, 'checkAccess'],
         ];
 
+        $actions['index'] = [
+            'class' =>'app\modules\common\controllers\actions\IndexAction',
+            'modelClass' => $this->modelClass,
+            'checkAccess' => [$this, 'checkAccess'],
+        ];
+
         return $actions;
     }
 }

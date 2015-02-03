@@ -8,7 +8,6 @@ class DemoController extends \yii\rest\Controller
 {
     public function actionIndex()
     {
-
         return Yii::$app->request->queryParams;
     }
 
