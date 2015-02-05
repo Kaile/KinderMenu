@@ -8,16 +8,29 @@ client.add 'portions'
 client.add 'ingridients'
 client.add 'units'
 
+class Saver
+    objectList: []
+    add: (savedObject) ->
+        @objectList.push savedObject if savedObject
+    save: ->
+        obj.save() for obj in @objectList
+        @objectList = []
+
 # First yes parameter is the allows thrown errors at once
 # Second yes parameter is the debug option for Checker
-checker = new $.Checker yes, yes
+checker = new $.Checker yes, no
 
+# Public: create menu
 Menu = React.createClass(
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         ingestions: []
         menu: []
         date: new Date
 
+    # Public: call after render
     componentDidMount: ->
         client.menus.read(date: @state.date).done (data) =>
             if data.length
@@ -26,6 +39,9 @@ Menu = React.createClass(
         client.ingestions.read().done (data) =>
             @setState ingestions: data if checker.check data, 'Load ingestion list for menu'
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <div className="panel panel-default">
             <div className="panel-heading" title={@state.date.toString()}>
@@ -65,7 +81,16 @@ Menu = React.createClass(
         </div>
 )
 
+# Public: list of menu elements.
 MenuList = React.createClass(
+    #Public: {object} received props type validation.
+    propTypes:
+        ingestions: React.PropTypes.arrayOf(React.PropTypes.object)
+        menuId: React.PropTypes.number
+
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         ingestions = []
 
@@ -91,10 +116,20 @@ MenuList = React.createClass(
         </tbody>
 )
 
+# Public: list of dishes thats be presents in menu by ingestion.
 MenuDishList = React.createClass(
+    #Public: {object} received props type validation.
+    propTypes:
+        menuId: React.PropTypes.number
+        ingestionId: React.PropTypes.number
+
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         dishes: []
 
+    # Public: call after render
     componentDidMount: ->
         loadedDishes = []
 
@@ -110,13 +145,24 @@ MenuDishList = React.createClass(
 
             @setState dishes: loadedDishes
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <div className="list-group">
             {@state.dishes}
         </div>
 )
 
+# Public: create view for single dish.
 Dish = React.createClass(
+    #Public: {object} received props type validation.
+    propTypes:
+        dish: React.PropTypes.object
+
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <a href="#" className="list-group-item">
             <h4 className="list-group-item-heading">{@props.dish.name}</h4>
@@ -126,10 +172,15 @@ Dish = React.createClass(
         </a>
 )
 
+# Public: list of dish's consist.
 ConsistList = React.createClass(
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         consistList: []
 
+    # Public: call after render
     componentDidMount: ->
 
         consists = []
@@ -142,45 +193,83 @@ ConsistList = React.createClass(
 
             @setState consistList: consists
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <span>
             Состав блюда: {@state.consistList}
         </span>
 )
 
+# Public: create view for single dish consist list.
 Consist = React.createClass(
+    #Public: {object} received props type validation.
+    propTypes: React.PropTypes.object
+
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <span className="label label-info">
             {@props.consist.name}: {@props.consist.size}
         </span>
 )
 
+# Public: handle to button of creating or adding dish in the menu.
 DishAddButton = React.createClass(
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <button onClick={@openDialog} className="btn btn-default" >
             Добавить блюдо
         </button>
 
+    # Public: handle of click on the add or create dish button
+    #
+    # Returns the void as {void}.
     openDialog: ->
         $('#dish-add-dialog').modal()
 )
 
+# Public: parent of added dish list.
 DishAdd = React.createClass(
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         elemCount: 0
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <DishAddList onCountUpdate={@handleCountUpdate} />
 
+    # Public: handle for updating counter of dish list
+    #
+    # count - The value of elements for updating as {number}.
+    #
+    # Returns the void as {void}.
     handleCountUpdate: (count) ->
         @setState(elemCount: count)
 
 )
 
+# Public: list of dishes that can be added to the menu.
 DishAddList = React.createClass(
+    #Public: {object} received props type validation.
+    propTypes:
+        onCountUpdate: React.PropTypes.func
+
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         dishAddList : []
 
+    # Public: call after render
     componentDidMount: ->
 
         dishList = []
@@ -193,16 +282,24 @@ DishAddList = React.createClass(
             @props.onCountUpdate(dishList.length)
             @setState dishAddList: dishList
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <div className="list-group">
             {@state.dishAddList}
         </div>
 )
 
+# Public: list of ingridients of dish that can be added to the consist of dish.
 IngridientList = React.createClass(
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         ingridientList: []
 
+    # Public: call after render
     componentDidMount: ->
 
         ingridients = [];
@@ -215,27 +312,44 @@ IngridientList = React.createClass(
 
             @setState(ingridientList: ingridients)
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <ul className="dropdown-menu">
             {@state.ingridientList}
         </ul>
 )
 
+# Public: creates view for single ingridient item.
 Ingridient = React.createClass(
+    #Public: {object} received props type validation.
+    propTypes:
+        name: React.PropTypes.string
+
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <li><a href="#">{@props.name}</a></li>
 )
 
 #TODO: сделать отображение и выбор единиц измерения
+# Public: list of units measures for size portions of ingridients.
 UnitList = React.createClass(
+    # Public: current showen unit identifier as {number}.
     currUnitId: 0
 
+    # Public: init state
+    #
+    # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         units: []
         currUnit:
             id: 0
             name: '????'
 
+    # Public: call after render
     componentDidMount: ->
         client.units.read().done (data) =>
             return if not checker.check data, 'Read all units in add dish dialog'
@@ -246,12 +360,18 @@ UnitList = React.createClass(
                     id: data[@currUnitId].id
                     name: data[@currUnitId].name
 
+    # Public: render components to DOM
+    #
+    # Returns the dom nodes as {NodeElement}.
     render: ->
         <div className="input-group">
             <input id="portion-new" type="text" className="form-control" placeholder="Количество"/>
             <span onClick={@changeUnits} unitId={@state.currUnit.id} title="Кликните для смены единиц измерения" className="input-group-addon">{@state.currUnit.name}</span>
         </div>
 
+    # Public: change unit handled to click on button of unit type
+    #
+    # Returns the void as {void}.
     changeUnits: ->
         maxId = @state.units.length - 1
         if ++@currUnitId > maxId

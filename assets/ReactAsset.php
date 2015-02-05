@@ -3,6 +3,7 @@
 namespace app\assets;
 
 use yii\web\AssetBundle;
+use Yii;
 
 /**
 * Asset bundle for the Twitter bootstrap css files.
@@ -12,7 +13,14 @@ use yii\web\AssetBundle;
 class ReactAsset extends AssetBundle
 {
 	public $sourcePath = '@bower/react';
-	public $js = [
-		'react.min.js',
-	];
+
+	public function __construct()
+	{
+		if (YII_ENV_DEV) {
+			$this->js[] = 'react.js';
+		} else {
+			$this->js[] = 'react.min.js';
+		}
+		parent::__construct();
+	}
 }
