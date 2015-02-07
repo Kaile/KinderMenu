@@ -8,10 +8,24 @@ client.add 'portions'
 client.add 'ingridients'
 client.add 'units'
 
+# Public: it calls save method from all pushed objects for save or update it.
+# @created 05.02.2015 23:35:12
+# @author Mihail Kornilov <fix-06 at yandex.ru>
 class Saver
+    # Public: array of objects for saving as {array}.
     objectList: []
+
+    # Public: add object to saving
+    #
+    # savedObject - The object that adds to save as {object}. Must to have save method
+    #
+    # Returns the true if save or undefined as {bool|undefined}.
     add: (savedObject) ->
-        @objectList.push savedObject if savedObject
+        @objectList.push savedObject if typeof savedObject.save is 'function'
+
+    # Public: peform saving of all objects in list
+    #
+    # Returns the empty array as {array}.
     save: ->
         obj.save() for obj in @objectList
         @objectList = []

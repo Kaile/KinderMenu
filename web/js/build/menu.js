@@ -23,7 +23,7 @@ Saver = (function() {
   Saver.prototype.objectList = [];
 
   Saver.prototype.add = function(savedObject) {
-    if (savedObject) {
+    if (typeof savedObject.save === 'function') {
       return this.objectList.push(savedObject);
     }
   };
