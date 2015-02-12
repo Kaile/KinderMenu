@@ -16,6 +16,11 @@ use Yii;
  */
 class Consists extends \yii\db\ActiveRecord
 {
+    public $size = 0;
+    public $unit = 0;
+    public $name = '';
+    public $shortName = '';
+
     /**
      * @inheritdoc
      */
@@ -63,42 +68,5 @@ class Consists extends \yii\db\ActiveRecord
     public function getDish()
     {
         return $this->hasOne(Dishes::className(), ['id' => 'dish_id']);
-    }
-
-    /**
-     * Getting the ingridient related query via portion
-     * @return \yii\db\ActiveQuery
-     */
-    public function getIngridient()
-    {
-        $this->getPortion()->getIngridient();
-    }
-
-    /**
-     * Getting the unit related query via ingridient
-     * @return \yii\db\ActiveQuery
-     */
-    public function getUnit()
-    {
-        return $this->getIngridient()->getUnit();
-    }
-
-    /**
-     * Add fields that consist need
-     * @return array fields and it values
-     */
-    public function fields()
-    {
-        $fields = parent::fields();
-
-        $portion    = (object) $this->getPortion()->one();
-        $ingridient = (object) $this->getIngridient()->one();
-        $unit       = (object) $this->getUnit()->one();
-
-        $fields['size'] = $portion->size;
-        $fields['name'] = $ingridient->name;
-        $fields['unit'] = $unit->name;
-
-        return $fields;
     }
 }

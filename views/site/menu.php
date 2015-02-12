@@ -24,36 +24,7 @@
                         <div id="menu-dish-add"></div>
                     </div>
                     <div class="tab-pane fade" id="dish-create">
-                        <div id="menu-dish-create">
-                            <div class="form-group">
-                                <br/>
-                                <label for="dish-name" class="sr-only">Название блюда</label>
-                                <input type="text" class="form-control" id="dish-name" placeholder="Введите название блюда"/>
-                                <br/>
-                                <p>Состав блюда:</p>
-
-                                <div class="row">
-                                    <div class="col-lg-7">
-                                        <div class="input-group">
-                                            <div class="input-group-btn">
-                                                <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown">
-                                                    Выберите или <span class="caret"></span>
-                                                </button>
-                                                <ul id="menu-ingridient-list" class="dropdown-menu">
-                                                </ul>
-                                            </div>
-                                            <input id="ingridient-new" type="text" class="form-control" placeholder="введите ингридиент"/>
-                                        </div>
-                                    </div>
-                                    <div class="col-lg-5">
-                                        <div class="input-group menu-unit-list">
-                                        </div>
-                                    </div>
-                                </div>
-                                <br/>
-                                <button class="btn btn-sm btn-primary">Создать блюдо</button>
-                            </div>
-                        </div>
+                        <div id="menu-dish-create"></div>
                     </div>
                 </div>
             </div>

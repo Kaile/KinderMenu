@@ -12,14 +12,19 @@ Object::toString = ->
 #
 # @created 26.01.2015 21:35:32
 # @author Mihail Kornilov <fix-06 at yandex.ru>
-# @since 1.0
+# @since 1.1
 class Dumper
+    # Public: constructor
+    #
+    # debug  - The state of debugging as {boolean}.
+    constructor: (@debug = yes) ->
     # Public: main method that dump variable to the console
     #
     # data - The dumped variable as {array|object}.
     #
     # Returns the void as {undefined}.
     log: (data, level = 0) ->
+        return unless @debug
         if @isArray(data)
             console.log @_getShift(level) + '['
 
@@ -57,7 +62,7 @@ class Dumper
 # @created 25.01.2015 22:33:22
 # @author Mihail Kornilov <fix-06 at yandex.ru>
 # @since 1.0
-class ErrorHandler
+class Informer
     # Public: class constructor
     #
     # msg   - The message that has been loged as {string}.
@@ -65,8 +70,8 @@ class ErrorHandler
     # show  - The show at once as {boolean}.
     #
     # Returns the void as `undefined`.
-    constructor: (@msg, @type = 'error', @show = on) ->
-        @show() if @show is on
+    constructor: (@msg, @type = 'error', @showed = on) ->
+        @show() if @showed is on
 
     # Public: show notification and log to console
     #
@@ -117,16 +122,16 @@ class Checker
 
         if typeof data is 'object'
             if data.status? in [403, 404]
-                @errorStack.push new ErrorHandler('Error in request. Response return "' + data.name + '"', 'error', @throwError)
+                @errorStack.push new Informer('Error in request. Response return "' + data.name + '"', 'error', @throwError)
                 return no
         else
-            @errorStack.push new ErrorHandler('Bad response was returned. No json data.', 'error', @throwError)
+            @errorStack.push new Informer('Bad response was returned. No json data.', 'error', @throwError)
             return no
         yes
 
     # Public: returns last error message
     #
-    # Returns the error object as {ErrorHandler}.
+    # Returns the error object as {Informer}.
     getLastError: ->
         if @errorStack
             @errorStack[@errorStack.lenght - 1]
@@ -139,4 +144,6 @@ class Checker
     getAllErrors: ->
         @errorStack
 
-$.Checker = Checker
+$.Informer = Informer
+$.Checker  = Checker
+$.Dumper   = Dumper

@@ -1,6 +1,4 @@
-<?php $this->registerJsFile('/js/build/jquery.omniwindow.js', ['depends' => ['yii\web\JqueryAsset']]) ?>
-<?php $this->registerCssFile('/css/jquery.omniwindow.css') ?>
-<?php $this->registerJsFile('/js/build/demo.omniwindow.js', ['depends' => ['yii\web\JqueryAsset', 'yii\bootstrap\BootstrapAsset']]) ?>
+<?php $this->title = 'Главная' ?>
 
 <div>
     <h1 style="text-align: center;">
