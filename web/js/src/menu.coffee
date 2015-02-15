@@ -1,4 +1,4 @@
-debugMode = yes
+debugMode = off
 
 client = new $.RestClient '/v1/'
 
@@ -53,14 +53,15 @@ Menu = React.createClass
     # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         ingestions: []
-        menu: []
+        menu:
+            id: 0
         date: new Date
 
     # Public: call after render
     componentDidMount: ->
-        client.menus.read(date: @state.date).done (data) =>
+        client.menus.read(date: @state.date.toLocaleDateString()).done (data) =>
             if data.length
-                @setState menu: data if checker.check data, 'Read menu by it date'
+                @setState menu: data if checker.check data, 'Read menu by it date: '
 
         client.ingestions.read().done (data) =>
             @setState ingestions: data if checker.check data, 'Load ingestion list for menu'
@@ -157,17 +158,17 @@ MenuDishList = React.createClass
     componentDidMount: ->
         loadedDishes = []
 
-        #TODO: Переделать на загрузку блюд из этого меню
-        client['menu-dishes'].read(
-            menu_id: @props.menuId
-            ingestion_id: @props.ingestionId
-        ).done (data) =>
-            return if not checker.check data, 'Read dishes by menu id and ingestion id'
+        if @props.menuId > 0
+            client['menu-dishes'].read(
+                menu_id: @props.menuId
+                ingestion_id: @props.ingestionId
+            ).done (data) =>
+                return if not checker.check data, 'Read dishes by menu id and ingestion id'
 
-            for i in [0...data.length]
-                loadedDishes.push <Dish dish={data[i]} />
+                for i in [0...data.length]
+                    loadedDishes.push <Dish dish={data[i]} />
 
-            @setState dishes: loadedDishes
+                @setState dishes: loadedDishes
 
     # Public: render components to DOM
     #
@@ -244,7 +245,7 @@ DishAddButton = React.createClass
     #
     # Returns the dom nodes as {NodeElement}.
     render: ->
-        <button onClick={@openDialog} className="btn btn-default" >
+        <button onClick={@openDialog} className="btn btn-sm btn-default" >
             Добавить блюдо
         </button>
 
@@ -330,6 +331,7 @@ DishCreate = React.createClass
 
     getInitialState: ->
         value: '' #dish name
+        doClear: off
 
     # Public: update ingridients for saving
     #
@@ -354,13 +356,16 @@ DishCreate = React.createClass
     # Public: saves new dish
     save: ->
         return new $.Informer 'Данные не прошли валидацию' unless @validate()
-
-        @saveDish().done (data) =>
-            return unless checker.check data, 'Save new dish'
-            @_dishId = data.id
-            @saveIngridients()
-        @saved.done ->
-            new $.Informer 'Новое блюдо сохранено, Вы можете добавить его в меню', 'info'
+        try
+            @saveDish().done (data) =>
+                return unless checker.check data, 'Save new dish'
+                @_dishId = data.id
+                @saveIngridients()
+            @saved.done =>
+                new $.Informer 'Новое блюдо сохранено, Вы можете добавить его в меню', 'info'
+                @clearDishCreateForm()
+        catch e
+            new $.Informer e.message
 
     # Public: validate saving data before save
     #
@@ -370,9 +375,6 @@ DishCreate = React.createClass
             new $.Informer 'Не введено название блюда'
             return no
         unless @_ingridients.length is @_portions.length and @_portions.length is @_units.length
-            console.log "ingridient length: #{@_ingridients.length}"
-            console.log "portions length: #{@_portions.length}"
-            console.log "units length: #{@_units.length}"
             new $.Informer 'Проверьте правильность заполнения ингридиентов блюда'
             return no
         yes
@@ -386,13 +388,19 @@ DishCreate = React.createClass
     # Public: saves ingridient of dish
     # TODO: Сделать точное определение сохранения всех данных блюда и обработку ошибок - в противном случае
     saveIngridients: ->
-        loopCallback = (i, deferred) =>
+        loopCallback = (i) =>
+            deferred = $.Deferred()
             if @_ingridients[i].name.length
                 # if ingridient is not exist
                 if @_ingridients[i].id is 0
-                    client.ingridients.create({name: @_ingridients[i].name, unit_id: @_units[i].id}).done (data) =>
-                        @savePortion(data.id, i) if checker.check data, 'Saving new ingridient: ' + @_ingridients[i].name
-                        deferred.resolve()
+                    client.ingridients.read({name: @_ingridients[i].name}).done (ingr) =>
+                        if ingr.length and checker.check ingr[0], 'Search for existing ingridient by it name'
+                            @savePortion(ingr[0].id, i)
+                            deferred.resolve()
+                        else
+                            client.ingridients.create({name: @_ingridients[i].name, unit_id: @_units[i].id}).done (data) =>
+                                @savePortion(data.id, i) if checker.check data, 'Saving new ingridient: ' + @_ingridients[i].name
+                                deferred.resolve()
                 else
                     @savePortion @_ingridients[i].id, i
                     deferred.resolve()
@@ -400,7 +408,7 @@ DishCreate = React.createClass
 
         loopRecursion = (start, stop) ->
             return if start > stop
-            loopCallback(start, $.Deferred()).done ->
+            loopCallback(start).done ->
                 loopRecursion start + 1, stop
 
         loopRecursion 0, @_units.length - 1
@@ -432,6 +440,12 @@ DishCreate = React.createClass
                     if checker.check data, 'Saving new consist'
                         @saved.resolve()
 
+    clearDishCreateForm: ->
+        @setState
+            doClear: on
+            value: ''
+        @setState doClear: off
+
     # Public: render components to DOM
     #
     # Returns the dom nodes as {NodeElement}.
@@ -442,7 +456,7 @@ DishCreate = React.createClass
             <input type="text" className="form-control" placeholder="Введите название блюда" value={@state.value} onChange={@handleChange}/>
             <br/>
             <p>Состав блюда:</p>
-            <DishConsist returnIngridients={@setIngridients} returnPortions={@setPortions} returnUnits={@setUnits} />
+            <DishConsist doClear={@state.doClear} returnIngridients={@setIngridients} returnPortions={@setPortions} returnUnits={@setUnits} />
             <br/>
             <button className="btn btn-sm btn-primary" onClick={@save}>Создать блюдо</button>
         </div>
@@ -479,9 +493,8 @@ DishConsist = React.createClass
     componentDidMount: ->
         @addConsist()
 
-    # Public: add new form for input dish ingridient description
-    addConsist: ->
-        tmp =   <div className="row">
+    getItem: ->
+        res =   <div className="row">
                     <div className="col-lg-7">
                         <IngridientInput rowNo={@_rowNo} updateIngridient={@handleIngridient} />
                     </div>
@@ -489,9 +502,22 @@ DishConsist = React.createClass
                         <Portion rowNo={@_rowNo} updatePortion={@handlePortion} updateUnit={@handleUnit} />
                     </div>
                 </div>
-        @state.content.push tmp
-        @setState content: @state.content
         ++@_rowNo
+        res
+
+    # Public: add new form for input dish ingridient description
+    addConsist: ->
+        @state.content.push @getItem()
+        @setState content: @state.content
+
+    clearConsist: ->
+        @_rowNo = 0
+        @setState content: []
+        @setState content: @getItem()
+
+    componentWillReceiveProps: ->
+        if @props.doClear is on
+            @clearConsist()
 
     render: ->
         <div>
