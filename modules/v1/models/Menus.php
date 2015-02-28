@@ -31,8 +31,7 @@ class Menus extends \yii\db\ActiveRecord
 	public function rules()
 	{
 		return [
-			[['dish_id', 'ingestion_id', 'date'], 'required'],
-			[['dish_id', 'ingestion_id'], 'integer'],
+			[['name'], 'string', 'max' => 255],
 			[['date'], 'safe']
 		];
 	}
@@ -44,26 +43,9 @@ class Menus extends \yii\db\ActiveRecord
 	{
 		return [
 			'id' => 'Идентификатор',
-			'dish_id' => 'Идентификатор блюда',
-			'ingestion_id' => 'Идентификатор приема пищи',
+			'name' => 'Название меню',
 			'date' => 'Дата создания меню',
 		];
-	}
-
-	/**
-	 * @return \yii\db\ActiveQuery
-	 */
-	public function getIngestion()
-	{
-		return $this->hasOne(Ingestions::className(), ['id' => 'ingestion_id']);
-	}
-
-	/**
-	 * @return \yii\db\ActiveQuery
-	 */
-	public function getDish()
-	{
-		return $this->hasOne(Dishes::className(), ['id' => 'dish_id']);
 	}
 
 	public function beforeSave($inserted)
@@ -71,12 +53,5 @@ class Menus extends \yii\db\ActiveRecord
 		$this->date = date('Y/m/d');
 
 		return true;
-	}
-
-	public function fields()
-	{
-		$fields = parent::fields();
-
-		return $fields;
 	}
 }

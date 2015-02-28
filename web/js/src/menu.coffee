@@ -1,4 +1,4 @@
-debugMode = off
+debugMode = on
 
 client = new $.RestClient '/v1/'
 
@@ -45,6 +45,61 @@ InputChangeMixin =
     handleChange: (e) ->
         @setState value: e.target.value
 
+MenuOrder = React.createClass
+    mixins: [InputChangeMixin]
+
+    getInitialState: ->
+        menuList: []
+        value: ''
+
+    componentDidMount: ->
+        @updateState()
+
+    updateState: ->
+        client.menus.read().done (data) =>
+            if data.length and checker.check data, 'Reads all menus'
+                menuList = []
+
+                for item in data
+                    menuList.push <MenuItem menu={item} />
+
+                res =
+                    <div className="col-lg-6">
+                        <ul className="list-group">
+                            {menuList}
+                        </ul>
+                    </div>
+                @setState menuList: res
+
+    addMenu: ->
+        unless @state.value
+            new $.Informer('Укажите название создаваемого меню', 'info')
+            return
+        client.menus.create({name: @state.value, date: (new Date()).toLocaleDateString()}).done (data) =>
+            @updateState()
+
+    render: ->
+        <div className="row">
+            <h3>Выберите меню для загрузки или создайте новое</h3>
+            {@state.menuList}
+            <div className="col-lg-6">
+                <div className="input-group">
+                    <span className="input-group-addon">Меню</span>
+                    <input className="form-control" onChange={@handleChange} value={@state.value} type="text" placeholder="Введите название меню" />
+                    <span className="input-group-btn">
+                        <button className="btn btn-default" type="button" onClick={@addMenu}>Добавить меню</button>
+                    </span>
+                </div>
+            </div>
+        </div>
+
+MenuItem = React.createClass
+    loadMenu: (e) ->
+        e.preventDefault()
+        React.render <Menu menu={@props.menu} />, $('#menu').get 0
+
+    render: ->
+        <li onClick={@loadMenu} className="list-group-item">{@props.menu.name} {@props.menu.date}</li>
 
 # Public: create menu
 Menu = React.createClass
@@ -53,15 +108,11 @@ Menu = React.createClass
     # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         ingestions: []
-        menu:
-            id: 0
-        date: new Date
+        menu: null
 
     # Public: call after render
-    componentDidMount: ->
-        client.menus.read(date: @state.date.toLocaleDateString()).done (data) =>
-            if data.length
-                @setState menu: data if checker.check data, 'Read menu by it date: '
+    componentWillMount: ->
+        @setState menu: @props.menu
 
         client.ingestions.read().done (data) =>
             @setState ingestions: data if checker.check data, 'Load ingestion list for menu'
@@ -71,11 +122,11 @@ Menu = React.createClass
     # Returns the dom nodes as {NodeElement}.
     render: ->
         <div className="panel panel-default">
-            <div className="panel-heading" title={@state.date.toString()}>
+            <div className="panel-heading" title={@state.menu.date}>
                 <h3>
                     <p className="text-center">
                         <strong>
-                            Меню на {@state.date.toLocaleDateString()}
+                            Меню на {@state.menu.date}
                         </strong>
                     </p>
                 </h3>
@@ -440,6 +491,9 @@ DishCreate = React.createClass
                     if checker.check data, 'Saving new consist'
                         @saved.resolve()
 
+    # Public: clears dish creating form
+    #
+    # Returns the [Description] as `undefined`.
     clearDishCreateForm: ->
         @setState
             doClear: on
@@ -664,6 +718,8 @@ Portion = React.createClass
             <span onClick={@changeUnits} unitId={@state.currUnit.id} title="Кликните для смены единиц измерения" className="input-group-addon">{@state.currUnit.name}</span>
         </div>
 
-React.render <Menu />, $('#menu').get 0
-React.render <DishAdd />, $('#menu-dish-add').get 0
-React.render <DishCreate />, $('#menu-dish-create').get 0
+
+React.render <MenuOrder />, $('#menu-order').get 0
+# React.render <Menu />, $('#menu').get 0
+# React.render <DishAdd />, $('#menu-dish-add').get 0
+# React.render <DishCreate />, $('#menu-dish-create').get 0
