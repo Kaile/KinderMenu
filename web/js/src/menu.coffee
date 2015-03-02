@@ -111,22 +111,29 @@ Menu = React.createClass
         menu: null
 
     # Public: call after render
-    componentWillMount: ->
-        @setState menu: @props.menu
+    # componentWillMount: ->
+    #     @updateState()
 
+    # updateState: ->
+    #     @setState menu: @props.menu
+    #
+    componentDidMount: ->
         client.ingestions.read().done (data) =>
             @setState ingestions: data if checker.check data, 'Load ingestion list for menu'
+    #
+    # componentWillReceiveProps: () ->
+    #     @updateState()
 
     # Public: render components to DOM
     #
     # Returns the dom nodes as {NodeElement}.
     render: ->
         <div className="panel panel-default">
-            <div className="panel-heading" title={@state.menu.date}>
+            <div className="panel-heading" title={@props.menu.date}>
                 <h3>
                     <p className="text-center">
                         <strong>
-                            Меню на {@state.menu.date}
+                            Меню на {@props.menu.date}
                         </strong>
                     </p>
                 </h3>
@@ -153,7 +160,7 @@ Menu = React.createClass
                         </h4>
                     </th>
                 </thead>
-                <MenuList ingestions={@state.ingestions} menuId={@state.menu.id}/>
+                <MenuList ingestions={@state.ingestions} menuId={@props.menu.id}/>
             </table>
             <div className="panel-footer">Итоговый состав:</div>
         </div>
@@ -171,18 +178,18 @@ MenuList = React.createClass
     render: ->
         ingestions = []
 
-        for i in [0...@props.ingestions.length]
+        for item in @props.ingestions
             ingestions.push(
                 <tr>
                     <td>
                         <h4>
                             <p className="text-center">
-                                {@props.ingestions[i].name}
+                                {item.name}
                             </p>
                         </h4>
                     </td>
                     <td>
-                        <MenuDishList menuId={@props.menuId} ingestionId={@props.ingestions[i].id} />
+                        <MenuDishList menuId={@props.menuId} ingestionId={item.id} />
                         <DishAddButton />
                     </td>
                 </tr>
@@ -216,8 +223,8 @@ MenuDishList = React.createClass
             ).done (data) =>
                 return if not checker.check data, 'Read dishes by menu id and ingestion id'
 
-                for i in [0...data.length]
-                    loadedDishes.push <Dish dish={data[i]} />
+                for item in data
+                    loadedDishes.push <Dish dish={item} />
 
                 @setState dishes: loadedDishes
 
@@ -235,14 +242,18 @@ Dish = React.createClass
     propTypes:
         dish: React.PropTypes.object
 
+    setActive: (e) ->
+        e.preventDefault()
+        $(e.target).toggleClass 'active'
+
     # Public: render components to DOM
     #
     # Returns the dom nodes as {NodeElement}.
     render: ->
-        <a href="#" className="list-group-item">
-            <h4 className="list-group-item-heading">{@props.dish.name}</h4>
-            <p className="list-group-item-text">
-                <ConsistList dishId={@props.dish.id} />
+        <a href="#" className="list-group-item" onMouseDown={@setActive}>
+            <h4 onMouseDown={@setActive} className="list-group-item-heading">{@props.dish.name}</h4>
+            <p className="list-group-item-text" onMouseDown={@setActive}>
+                <ConsistList dishId={@props.dish.id} onMouseDown={@setActive}/>
             </p>
         </a>
 
@@ -303,7 +314,8 @@ DishAddButton = React.createClass
     # Public: handle of click on the add or create dish button
     #
     # Returns the void as {void}.
-    openDialog: ->
+    openDialog: (e) ->
+        e.preventDefault()
         $('#dish-add-dialog').modal()
 
 # Public: parent of added dish list.
@@ -405,7 +417,8 @@ DishCreate = React.createClass
     saved: new $.Deferred()
 
     # Public: saves new dish
-    save: ->
+    save: (e) ->
+        e.preventDefault()
         return new $.Informer 'Данные не прошли валидацию' unless @validate()
         try
             @saveDish().done (data) =>
@@ -560,7 +573,8 @@ DishConsist = React.createClass
         res
 
     # Public: add new form for input dish ingridient description
-    addConsist: ->
+    addConsist: (e) ->
+        e.preventDefault()
         @state.content.push @getItem()
         @setState content: @state.content
 
@@ -647,7 +661,8 @@ Ingridient = React.createClass
         ingridient: React.PropTypes.object
         updateSelected: React.PropTypes.func
 
-    handleClick: ->
+    handleClick: (e) ->
+        e.preventDefault()
         @props.updateSelected(@props.ingridient)
 
     # Public: render components to DOM
@@ -696,7 +711,8 @@ Portion = React.createClass
     # Public: change unit handled to click on button of unit type
     #
     # Returns the void as {void}.
-    changeUnits: ->
+    changeUnits: (e) ->
+        e.preventDefault()
         maxId = @state.units.length - 1
         if ++@currUnitId > maxId
             @currUnitId = 0
@@ -721,5 +737,5 @@ Portion = React.createClass
 
 React.render <MenuOrder />, $('#menu-order').get 0
 # React.render <Menu />, $('#menu').get 0
-# React.render <DishAdd />, $('#menu-dish-add').get 0
-# React.render <DishCreate />, $('#menu-dish-create').get 0
+React.render <DishAdd />, $('#menu-dish-add').get 0
+React.render <DishCreate />, $('#menu-dish-create').get 0

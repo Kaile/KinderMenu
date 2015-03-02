@@ -37,5 +37,5 @@
         </div>
     </div>
 </div>
-<div id="menu-order"></div>
 <div id="menu"></div>
+<div id="menu-order"></div>

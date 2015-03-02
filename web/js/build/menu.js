@@ -154,10 +154,7 @@ Menu = React.createClass({
       menu: null
     };
   },
-  componentWillMount: function() {
-    this.setState({
-      menu: this.props.menu
-    });
+  componentDidMount: function() {
     return client.ingestions.read().done((function(_this) {
       return function(data) {
         if (checker.check(data, 'Load ingestion list for menu')) {
@@ -173,10 +170,10 @@ Menu = React.createClass({
       "className": "panel panel-default"
     }, React.createElement("div", {
       "className": "panel-heading",
-      "title": this.state.menu.date
+      "title": this.props.menu.date
     }, React.createElement("h3", null, React.createElement("p", {
       "className": "text-center"
-    }, React.createElement("strong", null, "\u041c\u0435\u043d\u044e \u043d\u0430 ", this.state.menu.date)))), React.createElement("table", {
+    }, React.createElement("strong", null, "\u041c\u0435\u043d\u044e \u043d\u0430 ", this.props.menu.date)))), React.createElement("table", {
       "className": "table"
     }, React.createElement("thead", null, React.createElement("th", null, React.createElement("h4", null, React.createElement("p", {
       "className": "text-center"
@@ -184,7 +181,7 @@ Menu = React.createClass({
       "className": "text-center"
     }, React.createElement("strong", null, "\u041d\u0430\u0437\u0432\u0430\u043d\u0438\u0435 \u0431\u043b\u044e\u0434\u0430 \u0438 \u0441\u043e\u0441\u0442\u0430\u0432"))))), React.createElement(MenuList, {
       "ingestions": this.state.ingestions,
-      "menuId": this.state.menu.id
+      "menuId": this.props.menu.id
     })), React.createElement("div", {
       "className": "panel-footer"
     }, "\u0418\u0442\u043e\u0433\u043e\u0432\u044b\u0439 \u0441\u043e\u0441\u0442\u0430\u0432:"));
@@ -197,14 +194,16 @@ MenuList = React.createClass({
     menuId: React.PropTypes.number
   },
   render: function() {
-    var i, ingestions, _i, _ref;
+    var ingestions, item, _i, _len, _ref;
     ingestions = [];
-    for (i = _i = 0, _ref = this.props.ingestions.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+    _ref = this.props.ingestions;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      item = _ref[_i];
       ingestions.push(React.createElement("tr", null, React.createElement("td", null, React.createElement("h4", null, React.createElement("p", {
         "className": "text-center"
-      }, this.props.ingestions[i].name))), React.createElement("td", null, React.createElement(MenuDishList, {
+      }, item.name))), React.createElement("td", null, React.createElement(MenuDishList, {
         "menuId": this.props.menuId,
-        "ingestionId": this.props.ingestions[i].id
+        "ingestionId": item.id
       }), React.createElement(DishAddButton, null))));
     }
     return React.createElement("tbody", null, ingestions);
@@ -230,13 +229,14 @@ MenuDishList = React.createClass({
         ingestion_id: this.props.ingestionId
       }).done((function(_this) {
         return function(data) {
-          var i, _i, _ref;
+          var item, _i, _len;
           if (!checker.check(data, 'Read dishes by menu id and ingestion id')) {
             return;
           }
-          for (i = _i = 0, _ref = data.length; 0 <= _ref ? _i < _ref : _i > _ref; i = 0 <= _ref ? ++_i : --_i) {
+          for (_i = 0, _len = data.length; _i < _len; _i++) {
+            item = data[_i];
             loadedDishes.push(React.createElement(Dish, {
-              "dish": data[i]
+              "dish": item
             }));
           }
           return _this.setState({
@@ -257,16 +257,24 @@ Dish = React.createClass({
   propTypes: {
     dish: React.PropTypes.object
   },
+  setActive: function(e) {
+    e.preventDefault();
+    return $(e.target).toggleClass('active');
+  },
   render: function() {
     return React.createElement("a", {
       "href": "#",
-      "className": "list-group-item"
+      "className": "list-group-item",
+      "onMouseDown": this.setActive
     }, React.createElement("h4", {
+      "onMouseDown": this.setActive,
       "className": "list-group-item-heading"
     }, this.props.dish.name), React.createElement("p", {
-      "className": "list-group-item-text"
+      "className": "list-group-item-text",
+      "onMouseDown": this.setActive
     }, React.createElement(ConsistList, {
-      "dishId": this.props.dish.id
+      "dishId": this.props.dish.id,
+      "onMouseDown": this.setActive
     })));
   }
 });
@@ -320,7 +328,8 @@ DishAddButton = React.createClass({
       "className": "btn btn-sm btn-default"
     }, "\u0414\u043e\u0431\u0430\u0432\u0438\u0442\u044c \u0431\u043b\u044e\u0434\u043e");
   },
-  openDialog: function() {
+  openDialog: function(e) {
+    e.preventDefault();
     return $('#dish-add-dialog').modal();
   }
 });
@@ -403,8 +412,8 @@ DishCreate = React.createClass({
     return this._units = units;
   },
   saved: new $.Deferred(),
-  save: function() {
-    var e;
+  save: function(e) {
+    e.preventDefault();
     if (!this.validate()) {
       return new $.Informer('Данные не прошли валидацию');
     }
@@ -610,7 +619,8 @@ DishConsist = React.createClass({
     ++this._rowNo;
     return res;
   },
-  addConsist: function() {
+  addConsist: function(e) {
+    e.preventDefault();
     this.state.content.push(this.getItem());
     return this.setState({
       content: this.state.content
@@ -720,7 +730,8 @@ Ingridient = React.createClass({
     ingridient: React.PropTypes.object,
     updateSelected: React.PropTypes.func
   },
-  handleClick: function() {
+  handleClick: function(e) {
+    e.preventDefault();
     return this.props.updateSelected(this.props.ingridient);
   },
   render: function() {
@@ -774,8 +785,9 @@ Portion = React.createClass({
       };
     })(this));
   },
-  changeUnits: function() {
+  changeUnits: function(e) {
     var maxId, unit;
+    e.preventDefault();
     maxId = this.state.units.length - 1;
     if (++this.currUnitId > maxId) {
       this.currUnitId = 0;
@@ -808,3 +820,7 @@ Portion = React.createClass({
 });
 
 React.render(React.createElement(MenuOrder, null), $('#menu-order').get(0));
+
+React.render(React.createElement(DishAdd, null), $('#menu-dish-add').get(0));
+
+React.render(React.createElement(DishCreate, null), $('#menu-dish-create').get(0));
