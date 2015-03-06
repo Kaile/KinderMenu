@@ -5,6 +5,7 @@ namespace app\modules\v1\controllers;
 use Yii;
 use yii\db\Query;
 use app\modules\v1\models\Dishes;
+use app\modules\v1\models\MenuConsists;
 use yii\data\ActiveDataProvider;
 
 class MenuDishesController extends \yii\rest\Controller
@@ -28,5 +29,16 @@ class MenuDishesController extends \yii\rest\Controller
         return new ActiveDataProvider([
             'query' => Dishes::find(),
         ]);
+    }
+
+    public function actionDelete()
+    {
+        $queryParams = Yii::$app->request->queryParams;
+
+        if (array_key_exists('dish_id', $queryParams)) {
+            $record = MenuConsists::find(['dish_id' => $queryParams['dish_id']]);
+
+            return $record ? $record->delete() : $record;
+        }
     }
 }

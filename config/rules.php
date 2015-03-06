@@ -14,6 +14,7 @@ return [
 			'v1/menu',
 			'v1/demo',
 			'v1/menu-dishes',
+			'v1/menu-consists',
 		],
 	],
 ];
