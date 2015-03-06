@@ -220,6 +220,7 @@ MenuDishList = React.createClass
         @handleUpdateDishList()
 
     openDishAddDialog: ->
+        React.unmountComponentAtNode $('#dish-list').get 0
         React.render <DishesLight changeDishList={@handleUpdateDishList} menuId={@props.menuId} ingestionId={@props.ingestionId} />, $('#dish-list').get 0
         $('#dish-add-dialog').modal().show()
 
@@ -271,12 +272,15 @@ DishesLight = React.createClass
         dishList: []
 
     componentDidMount: ->
-        client.dishes.read().done (data) =>
-            return unless checker.check data, 'Load all dishes for select to menu'
+        client['menu-dishes'].read({menu_id: @props.menuId, ingestion_id: @props.ingestionId}).done (existingDishes) =>
+            return unless checker.check existingDishes, 'Load dihes for menu'
+            #TODO: Сделать обработку для случаев с fail при загрузке данных
+            client.dishes.read().done (data) =>
+                return unless checker.check data, 'Load all dishes for select to menu'
 
-            @setState dishList: data.map (dish) =>
-                #TODO: Сделать загрузку списка блюд только тех которые отсутсвуют в текущем меню текущего времени приема пищи
-                <DishLight dish={dish} {...@props} />
+                @setState dishList: data.map (dish) =>
+                    #TODO: Сделать загрузку списка блюд только тех которые отсутсвуют в текущем меню текущего времени приема пищи
+                    <DishLight dish={dish} {...@props} existingDishes={existingDishes} />
 
     render: ->
         <div>
@@ -289,6 +293,7 @@ DishLight = React.createClass
         menuId: React.PropTypes.number
         ingestionId: React.PropTypes.number
         dish: React.PropTypes.object
+        existingDishes: React.PropTypes.arrayOf(React.PropTypes.object)
 
     toggleDishInMenu: (e) ->
         button = $(e.target)
@@ -303,6 +308,7 @@ DishLight = React.createClass
                 .done( (data) =>
                     button.removeClass 'btn-default'
                     button.addClass 'btn-success'
+                    button.attr 'title' , 'Данное блюдо присутствует в меню'
                     return unless checker.check data, 'Add new dish in menu'
                     @props.changeDishList()
                     new $.Informer 'Блюдо "' + button.text() + '" добавлено в меню', 'info'
@@ -316,7 +322,16 @@ DishLight = React.createClass
 
     render: ->
         style = margin: "15px"
-        <button onClick={@toggleDishInMenu} className="btn btn-default" style={style} >{@props.dish.name}</button>
+        classBtn = 'btn '
+        classBtnStyle = 'btn-default'
+        title = 'Кликните для добавления в меню'
+        for existingDish in @props.existingDishes
+            if @props.dish.id is Number existingDish.id
+                classBtnStyle = 'btn-success'
+                title = 'Данное блюдо присутствует в меню'
+                break
+            
+        <button onClick={@toggleDishInMenu} className={classBtn + classBtnStyle} title={title} style={style} >{@props.dish.name}</button>
 
 # Public: create view for single dish.
 Dish = React.createClass

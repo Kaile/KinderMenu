@@ -229,6 +229,7 @@ MenuDishList = React.createClass({
     return this.handleUpdateDishList();
   },
   openDishAddDialog: function() {
+    React.unmountComponentAtNode($('#dish-list').get(0));
     React.render(React.createElement(DishesLight, {
       "changeDishList": this.handleUpdateDishList,
       "menuId": this.props.menuId,
@@ -300,17 +301,27 @@ DishesLight = React.createClass({
     };
   },
   componentDidMount: function() {
-    return client.dishes.read().done((function(_this) {
-      return function(data) {
-        if (!checker.check(data, 'Load all dishes for select to menu')) {
+    return client['menu-dishes'].read({
+      menu_id: this.props.menuId,
+      ingestion_id: this.props.ingestionId
+    }).done((function(_this) {
+      return function(existingDishes) {
+        if (!checker.check(existingDishes, 'Load dihes for menu')) {
           return;
         }
-        return _this.setState({
-          dishList: data.map(function(dish) {
-            return React.createElement(DishLight, React.__spread({
-              "dish": dish
-            }, _this.props));
-          })
+        return client.dishes.read().done(function(data) {
+          if (!checker.check(data, 'Load all dishes for select to menu')) {
+            return;
+          }
+          return _this.setState({
+            dishList: data.map(function(dish) {
+              return React.createElement(DishLight, React.__spread({
+                "dish": dish
+              }, _this.props, {
+                "existingDishes": existingDishes
+              }));
+            })
+          });
         });
       };
     })(this));
@@ -326,7 +337,8 @@ DishLight = React.createClass({
       changeDishList: React.propTypes.func,
       menuId: React.PropTypes.number,
       ingestionId: React.PropTypes.number,
-      dish: React.PropTypes.object
+      dish: React.PropTypes.object,
+      existingDishes: React.PropTypes.arrayOf(React.PropTypes.object)
     };
   },
   toggleDishInMenu: function(e) {
@@ -342,6 +354,7 @@ DishLight = React.createClass({
         return function(data) {
           button.removeClass('btn-default');
           button.addClass('btn-success');
+          button.attr('title', 'Данное блюдо присутствует в меню');
           if (!checker.check(data, 'Add new dish in menu')) {
             return;
           }
@@ -360,13 +373,26 @@ DishLight = React.createClass({
     }
   },
   render: function() {
-    var style;
+    var classBtn, classBtnStyle, existingDish, style, title, _i, _len, _ref;
     style = {
       margin: "15px"
     };
+    classBtn = 'btn ';
+    classBtnStyle = 'btn-default';
+    title = 'Кликните для добавления в меню';
+    _ref = this.props.existingDishes;
+    for (_i = 0, _len = _ref.length; _i < _len; _i++) {
+      existingDish = _ref[_i];
+      if (this.props.dish.id === Number(existingDish.id)) {
+        classBtnStyle = 'btn-success';
+        title = 'Данное блюдо присутствует в меню';
+        break;
+      }
+    }
     return React.createElement("button", {
       "onClick": this.toggleDishInMenu,
-      "className": "btn btn-default",
+      "className": classBtn + classBtnStyle,
+      "title": title,
       "style": style
     }, this.props.dish.name);
   }
