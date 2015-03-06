@@ -17,9 +17,9 @@ class ReactAsset extends AssetBundle
 	public function __construct()
 	{
 		if (YII_ENV_DEV) {
-			$this->js[] = 'react.js';
+			$this->js[] = 'react-with-addons.js';
 		} else {
-			$this->js[] = 'react.min.js';
+			$this->js[] = 'react-with-addons.min.js';
 		}
 		parent::__construct();
 	}

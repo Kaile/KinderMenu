@@ -10,6 +10,7 @@ client.add 'portions'
 client.add 'ingridients'
 client.add 'units'
 client.add 'consists'
+client.add 'menu-consists'
 
 # First yes parameter is the allows thrown errors at once
 # Second yes parameter is the debug option for Checker
@@ -96,6 +97,7 @@ MenuOrder = React.createClass
 MenuItem = React.createClass
     loadMenu: (e) ->
         e.preventDefault()
+        React.unmountComponentAtNode $('#menu').get 0
         React.render <Menu menu={@props.menu} />, $('#menu').get 0
 
     render: ->
@@ -182,15 +184,16 @@ MenuList = React.createClass
             ingestions.push(
                 <tr>
                     <td>
-                        <h4>
-                            <p className="text-center">
-                                {item.name}
-                            </p>
-                        </h4>
+                        <div className="col-lg-6">
+                            <h4>
+                                <p className="text-center">
+                                    {item.name}
+                                </p>
+                            </h4>
+                        </div>
                     </td>
                     <td>
                         <MenuDishList menuId={@props.menuId} ingestionId={item.id} />
-                        <DishAddButton />
                     </td>
                 </tr>
             )
@@ -214,6 +217,13 @@ MenuDishList = React.createClass
 
     # Public: call after render
     componentDidMount: ->
+        @handleUpdateDishList()
+
+    openDishAddDialog: ->
+        React.render <DishesLight changeDishList={@handleUpdateDishList} menuId={@props.menuId} ingestionId={@props.ingestionId} />, $('#dish-list').get 0
+        $('#dish-add-dialog').modal().show()
+
+    handleUpdateDishList: ->
         loadedDishes = []
 
         if @props.menuId > 0
@@ -223,8 +233,19 @@ MenuDishList = React.createClass
             ).done (data) =>
                 return if not checker.check data, 'Read dishes by menu id and ingestion id'
 
+                if data.length is 0
+                    loadedDishes.push(
+                        <div className="row">
+                            <div className="col-lg-6">
+                                <div className="well">
+                                    Блюда отсутствуют
+                                </div>
+                            </div>
+                        </div>
+                    )
+
                 for item in data
-                    loadedDishes.push <Dish dish={item} />
+                    loadedDishes.push <Dish onDishChange={[@handleUpdateDishList]} dish={item} menuId={@props.menuId} ingestionId={@props.ingestionId} />
 
                 @setState dishes: loadedDishes
 
@@ -234,26 +255,103 @@ MenuDishList = React.createClass
     render: ->
         <div className="list-group">
             {@state.dishes}
+            <br/>
+            <button className="btn btn-default" type="button" onClick={@openDishAddDialog} title="Добавить блюдо">
+                Добавить блюдо
+            </button>
         </div>
+
+DishesLight = React.createClass
+    propTypes: ->
+        changeDishList: React.propTypes.func
+        menuId: React.propTypes.number
+        ingestionId: React.propTypes.number
+
+    getInitialState: ->
+        dishList: []
+
+    componentDidMount: ->
+        client.dishes.read().done (data) =>
+            return unless checker.check data, 'Load all dishes for select to menu'
+
+            @setState dishList: data.map (dish) =>
+                #TODO: Сделать загрузку списка блюд только тех которые отсутсвуют в текущем меню текущего времени приема пищи
+                <DishLight dish={dish} {...@props} />
+
+    render: ->
+        <div>
+            {@state.dishList}
+        </div>
+
+DishLight = React.createClass
+    propTypes: ->
+        changeDishList: React.propTypes.func
+        menuId: React.PropTypes.number
+        ingestionId: React.PropTypes.number
+        dish: React.PropTypes.object
+
+    toggleDishInMenu: (e) ->
+        button = $(e.target)
+        if button.hasClass 'btn-default'
+            newDishInMenu = 
+                menu_id: @props.menuId
+                ingestion_id: @props.ingestionId
+                dish_id: @props.dish.id
+
+            client['menu-consists']
+                .create(newDishInMenu)
+                .done( (data) =>
+                    button.removeClass 'btn-default'
+                    button.addClass 'btn-success'
+                    return unless checker.check data, 'Add new dish in menu'
+                    @props.changeDishList()
+                    new $.Informer 'Блюдо "' + button.text() + '" добавлено в меню', 'info'
+                )
+                .fail( (data) => 
+                    #TODO: в будущем переделать
+                    messages = data.responseJSON
+                    messages.map (item) ->
+                        new $.Informer item.message, 'error'
+                )
+
+    render: ->
+        style = margin: "15px"
+        <button onClick={@toggleDishInMenu} className="btn btn-default" style={style} >{@props.dish.name}</button>
 
 # Public: create view for single dish.
 Dish = React.createClass
     #Public: {object} received props type validation.
     propTypes:
         dish: React.PropTypes.object
+        menuId: React.PropTypes.number
+        ingestionId: React.PropTypes.number
+        onDishChange: React.PropTypes.array
 
-    setActive: (e) ->
+    removeDish: (e) ->
         e.preventDefault()
-        $(e.target).toggleClass 'active'
+
+        client['menu-consists']
+            .read({dish_id: @props.dish.id, ingestion_id: @props.ingestionId, menu_id: @props.menuId})
+            .done((data) =>
+                return unless checker.check data, 'Search for menu consists for dish deleting'
+                if data.length
+                    client['menu-consists'].destroy(data[0].id).done (data) =>
+                        new $.Informer "Блюдо '#{@props.dish.name}' было удалено из меню"
+                        for item in @props.onDishChange
+                            item.call()
+            )
+
+
 
     # Public: render components to DOM
     #
     # Returns the dom nodes as {NodeElement}.
     render: ->
-        <a href="#" className="list-group-item" onMouseDown={@setActive}>
+        <a href="#" className="list-group-item">
+            <button onClick={@removeDish} type="button" className="close pull-right">x</button>
             <h4 onMouseDown={@setActive} className="list-group-item-heading">{@props.dish.name}</h4>
-            <p className="list-group-item-text" onMouseDown={@setActive}>
-                <ConsistList dishId={@props.dish.id} onMouseDown={@setActive}/>
+            <p className="list-group-item-text">
+                <ConsistList dishId={@props.dish.id}/>
             </p>
         </a>
 
@@ -300,23 +398,6 @@ Consist = React.createClass
                 {@props.consist.name}: {@props.consist.size} {@props.consist.shortName}.
             </span>  <span></span>
         </span>
-
-# Public: handle to button of creating or adding dish in the menu.
-DishAddButton = React.createClass
-    # Public: render components to DOM
-    #
-    # Returns the dom nodes as {NodeElement}.
-    render: ->
-        <button onClick={@openDialog} className="btn btn-sm btn-default" >
-            Добавить блюдо
-        </button>
-
-    # Public: handle of click on the add or create dish button
-    #
-    # Returns the void as {void}.
-    openDialog: (e) ->
-        e.preventDefault()
-        $('#dish-add-dialog').modal()
 
 # Public: parent of added dish list.
 DishAdd = React.createClass
@@ -737,5 +818,5 @@ Portion = React.createClass
 
 React.render <MenuOrder />, $('#menu-order').get 0
 # React.render <Menu />, $('#menu').get 0
-React.render <DishAdd />, $('#menu-dish-add').get 0
-React.render <DishCreate />, $('#menu-dish-create').get 0
+#React.render <DishAdd />, $('#menu-dish-add').get 0
+#React.render <DishCreate />, $('#menu-dish-create').get 0
