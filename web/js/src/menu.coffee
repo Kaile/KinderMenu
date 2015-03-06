@@ -246,7 +246,7 @@ MenuDishList = React.createClass
                     )
 
                 for item in data
-                    loadedDishes.push <Dish onDishChange={[@handleUpdateDishList]} dish={item} menuId={@props.menuId} ingestionId={@props.ingestionId} />
+                    loadedDishes.push <Dish key={item.id} onDishChange={[@handleUpdateDishList]} dish={item} menuId={@props.menuId} ingestionId={@props.ingestionId} />
 
                 @setState dishes: loadedDishes
 
@@ -254,8 +254,12 @@ MenuDishList = React.createClass
     #
     # Returns the dom nodes as {NodeElement}.
     render: ->
+        ReactCSSTransitionGroup = React.addons.CSSTransitionGroup
+
         <div className="list-group">
-            {@state.dishes}
+            <ReactCSSTransitionGroup transitionName="fade">
+                {@state.dishes}
+            </ReactCSSTransitionGroup>
             <br/>
             <button className="btn btn-default" type="button" onClick={@openDishAddDialog} title="Добавить блюдо">
                 Добавить блюдо

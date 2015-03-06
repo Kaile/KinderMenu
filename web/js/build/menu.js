@@ -262,6 +262,7 @@ MenuDishList = React.createClass({
           for (_i = 0, _len = data.length; _i < _len; _i++) {
             item = data[_i];
             loadedDishes.push(React.createElement(Dish, {
+              "key": item.id,
               "onDishChange": [_this.handleUpdateDishList],
               "dish": item,
               "menuId": _this.props.menuId,
@@ -276,9 +277,13 @@ MenuDishList = React.createClass({
     }
   },
   render: function() {
+    var ReactCSSTransitionGroup;
+    ReactCSSTransitionGroup = React.addons.CSSTransitionGroup;
     return React.createElement("div", {
       "className": "list-group"
-    }, this.state.dishes, React.createElement("br", null), React.createElement("button", {
+    }, React.createElement(ReactCSSTransitionGroup, {
+      "transitionName": "fade"
+    }, this.state.dishes), React.createElement("br", null), React.createElement("button", {
       "className": "btn btn-default",
       "type": "button",
       "onClick": this.openDishAddDialog,
