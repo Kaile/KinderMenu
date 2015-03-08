@@ -120,7 +120,14 @@ MenuItem = React.createClass
         React.render <Menu menu={@props.menu} />, $('#menu').get 0
 
     render: ->
-        <li onClick={@loadMenu} className="list-group-item">{@props.menu.name} {@props.menu.date}</li>
+        <li onClick={@loadMenu} className="list-group-item">
+            <span>
+                {@props.menu.name or '<Без названия>'}
+            </span>
+            <span className="pull-right">
+                {@props.menu.date}
+            </span>
+        </li>
 
 # Public: create menu
 Menu = React.createClass

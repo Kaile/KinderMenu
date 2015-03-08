@@ -162,7 +162,9 @@ MenuItem = React.createClass({
     return React.createElement("li", {
       "onClick": this.loadMenu,
       "className": "list-group-item"
-    }, this.props.menu.name, " ", this.props.menu.date);
+    }, React.createElement("span", null, this.props.menu.name || '<Без названия>'), React.createElement("span", {
+      "className": "pull-right"
+    }, this.props.menu.date));
   }
 });
 
