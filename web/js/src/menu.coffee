@@ -41,6 +41,16 @@ class Saver
         obj.save() for obj in @objectList
         @objectList = []
 
+showFailMessage = (data) ->
+    message = data.responseJSON or data.responseText
+    if typeof message.join is 'function'
+        message = message.join "\n"
+    if debugMode
+        new $.Informer message, 'error'
+    else
+        new $.Informer 'При загрузке данных произошла ошибка'
+        console.log message
+
 # Public: mixin that handled change event.
 InputChangeMixin =
     handleChange: (e) ->
@@ -57,8 +67,8 @@ MenuOrder = React.createClass
         @updateState()
 
     updateState: ->
-        client.menus.read().done (data) =>
-            if data.length and checker.check data, 'Reads all menus'
+        client.menus.read()
+            .done((data) =>
                 menuList = []
 
                 for item in data
@@ -71,13 +81,22 @@ MenuOrder = React.createClass
                         </ul>
                     </div>
                 @setState menuList: res
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     addMenu: ->
         unless @state.value
             new $.Informer('Укажите название создаваемого меню', 'info')
             return
-        client.menus.create({name: @state.value, date: (new Date()).toLocaleDateString()}).done (data) =>
-            @updateState()
+        client.menus.create({name: @state.value, date: (new Date()).toLocaleDateString()})
+            .done((data) =>
+                @updateState()
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     render: ->
         <div className="row">
@@ -119,8 +138,13 @@ Menu = React.createClass
     #     @setState menu: @props.menu
     #
     componentDidMount: ->
-        client.ingestions.read().done (data) =>
-            @setState ingestions: data if checker.check data, 'Load ingestion list for menu'
+        client.ingestions.read()
+            .done((data) =>
+                @setState ingestions: data
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
     #
     # componentWillReceiveProps: () ->
     #     @updateState()
@@ -233,9 +257,8 @@ MenuDishList = React.createClass
             client['menu-dishes'].read(
                 menu_id: @props.menuId
                 ingestion_id: @props.ingestionId
-            ).done (data) =>
-                return if not checker.check data, 'Read dishes by menu id and ingestion id'
-
+            )
+            .done((data) =>
                 if data.length is 0
                     loadedDishes.push(
                         <div className="row">
@@ -251,6 +274,10 @@ MenuDishList = React.createClass
                     loadedDishes.push <Dish key={item.id} onDishChange={[@handleUpdateDishList]} dish={item} menuId={@props.menuId} ingestionId={@props.ingestionId} />
 
                 @setState dishes: loadedDishes
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: render components to DOM
     #
@@ -278,15 +305,21 @@ DishesLight = React.createClass
         dishList: []
 
     componentDidMount: ->
-        client['menu-dishes'].read({menu_id: @props.menuId, ingestion_id: @props.ingestionId}).done (existingDishes) =>
-            return unless checker.check existingDishes, 'Load dihes for menu'
-            #TODO: Сделать обработку для случаев с fail при загрузке данных
-            client.dishes.read().done (data) =>
-                return unless checker.check data, 'Load all dishes for select to menu'
-
-                @setState dishList: data.map (dish) =>
-                    #TODO: Сделать загрузку списка блюд только тех которые отсутсвуют в текущем меню текущего времени приема пищи
-                    <DishLight dish={dish} {...@props} existingDishes={existingDishes} />
+        client['menu-dishes'].read({menu_id: @props.menuId, ingestion_id: @props.ingestionId})
+            .done((existingDishes) =>
+                client.dishes.read()
+                    .done((data) =>
+                        @setState dishList: data.map (dish) =>
+                            #TODO: Сделать загрузку списка блюд только тех которые отсутсвуют в текущем меню текущего времени приема пищи
+                            <DishLight dish={dish} {...@props} existingDishes={existingDishes} />
+                    )
+                    .fail((data) ->
+                    showFailMessage data
+                    )
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     render: ->
         <div>
@@ -315,16 +348,13 @@ DishLight = React.createClass
                     button.removeClass 'btn-default'
                     button.addClass 'btn-success'
                     button.attr 'title' , 'Данное блюдо присутствует в меню'
-                    return unless checker.check data, 'Add new dish in menu'
+                    
                     @props.changeDishList()
-                    $('#menu').trigger('dish-update')
+                    $('#menu').trigger('dishlist:update')
                     new $.Informer 'Блюдо "' + button.text() + '" добавлено в меню', 'info'
                 )
-                .fail( (data) => 
-                    #TODO: в будущем переделать
-                    messages = data.responseJSON
-                    messages.map (item) ->
-                        new $.Informer item.message, 'error'
+                .fail((data) ->
+                    showFailMessage data
                 )
 
     render: ->
@@ -355,13 +385,20 @@ Dish = React.createClass
         client['menu-consists']
             .read({dish_id: @props.dish.id, ingestion_id: @props.ingestionId, menu_id: @props.menuId})
             .done((data) =>
-                return unless checker.check data, 'Search for menu consists for dish deleting'
                 if data.length
-                    client['menu-consists'].destroy(data[0].id).done (data) =>
-                        new $.Informer "Блюдо '#{@props.dish.name}' было удалено из меню"
-                        for item in @props.onDishChange
-                            item.call()
-                        $('#menu').trigger('dish-update')
+                    client['menu-consists'].destroy(data[0].id)
+                        .done((data) =>
+                            new $.Informer "Блюдо '#{@props.dish.name}' было удалено из меню"
+                            for item in @props.onDishChange
+                                item.call()
+                            $('#menu').trigger('dishlist:update')
+                        )
+                        .fail((data) ->
+                            showFailMessage data
+                        )
+            )
+            .fail((data) ->
+                showFailMessage data
             )
 
     # Public: render components to DOM
@@ -385,15 +422,20 @@ FinalConsist = React.createClass
 
     componentDidMount: ->
         @updateState()
-        $('#menu').on('dish-update', => 
+        $('#menu').on('dishlist:update', => 
             @updateState())
 
     updateState: ->
-        client.consists.read({menu_id: @props.menuId}).done (data) =>
-            consistList = [];
-            for item in data 
-                consistList.push <Consist consist={item} />
-            @setState consist: consistList
+        client.consists.read({menu_id: @props.menuId})
+            .done((data) =>
+                consistList = [];
+                for item in data 
+                    consistList.push <Consist consist={item} />
+                @setState consist: consistList
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     render: ->
         <span>
@@ -413,13 +455,16 @@ ConsistList = React.createClass
 
         consists = []
 
-        client.consists.read(dish_id: @props.dishId).done (data) =>
-            return if not checker.check data, 'Read consists by dish id'
+        client.consists.read(dish_id: @props.dishId)
+            .done((data) =>
+                for item in data
+                    consists.push <Consist consist={item} />
 
-            for item in data
-                consists.push <Consist consist={item} />
-
-            @setState consistList: consists
+                @setState consistList: consists
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: render components to DOM
     #
@@ -483,13 +528,16 @@ DishAddList = React.createClass
 
         dishList = []
 
-        client.dishes.read().done (data) =>
-            return if not checker.check data, 'Read all dishes for add dialog'
-
-            for i in [0...data.length]
-                dishList.push <Dish dish={data[i]} />
-            @props.onCountUpdate(dishList.length)
-            @setState dishAddList: dishList
+        client.dishes.read()
+            .done((data) =>
+                for i in [0...data.length]
+                    dishList.push <Dish dish={data[i]} />
+                @props.onCountUpdate(dishList.length)
+                @setState dishAddList: dishList
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: render components to DOM
     #
@@ -546,16 +594,22 @@ DishCreate = React.createClass
     save: (e) ->
         e.preventDefault()
         return new $.Informer 'Данные не прошли валидацию' unless @validate()
-        try
-            @saveDish().done (data) =>
-                return unless checker.check data, 'Save new dish'
+        @saveDish()
+            .done((data) =>
                 @_dishId = data.id
                 @saveIngridients()
-            @saved.done =>
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
+        @saved
+            .done(=>
                 new $.Informer 'Новое блюдо сохранено, Вы можете добавить его в меню', 'info'
                 @clearDishCreateForm()
-        catch e
-            new $.Informer e.message
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: validate saving data before save
     #
@@ -583,14 +637,24 @@ DishCreate = React.createClass
             if @_ingridients[i].name.length
                 # if ingridient is not exist
                 if @_ingridients[i].id is 0
-                    client.ingridients.read({name: @_ingridients[i].name}).done (ingr) =>
-                        if ingr.length and checker.check ingr[0], 'Search for existing ingridient by it name'
-                            @savePortion(ingr[0].id, i)
-                            deferred.resolve()
-                        else
-                            client.ingridients.create({name: @_ingridients[i].name, unit_id: @_units[i].id}).done (data) =>
-                                @savePortion(data.id, i) if checker.check data, 'Saving new ingridient: ' + @_ingridients[i].name
+                    client.ingridients.read({name: @_ingridients[i].name})
+                        .done((ingr) =>
+                            if ingr.length
+                                @savePortion(ingr[0].id, i)
                                 deferred.resolve()
+                            else
+                                client.ingridients.create({name: @_ingridients[i].name, unit_id: @_units[i].id})
+                                    .done((data) =>
+                                        @savePortion(data.id, i)
+                                        deferred.resolve()
+                                    )
+                                    .fail((data) ->
+                                        showFailMessage data
+                                    )
+                        )
+                        .fail((data) ->
+                            showFailMessage data
+                        )
                 else
                     @savePortion @_ingridients[i].id, i
                     deferred.resolve()
@@ -598,8 +662,13 @@ DishCreate = React.createClass
 
         loopRecursion = (start, stop) ->
             return if start > stop
-            loopCallback(start).done ->
-                loopRecursion start + 1, stop
+            loopCallback(start)
+                .done(->
+                    loopRecursion start + 1, stop
+                )
+                .fail((data) ->
+                    showFailMessage data
+                )
 
         loopRecursion 0, @_units.length - 1
 
@@ -608,27 +677,46 @@ DishCreate = React.createClass
     # ingridientId - The ingridient identifier as {number}.
     # i            - The index of curr ingridient as {number}.
     savePortion: (ingridientId, i) ->
-        client.portions.read({ingridient_id: ingridientId, size: @_portions[i]}).done (data) =>
-            # if portion exists
-            if data.length and checker.check data, 'Getting portion exist or not'
-                existPortionId = data[0].id
-                @saveConsist existPortionId, i
-            else
-                client.portions.create({ingridient_id: ingridientId, size: @_portions[i]}).done (data) =>
-                    @saveConsist data.id, i if checker.check data, 'Saving new portion: ' + data.id
+        client.portions.read({ingridient_id: ingridientId, size: @_portions[i]})
+            .done((data) =>
+                # if portion exists
+                if data.length
+                    existPortionId = data[0].id
+                    @saveConsist existPortionId, i
+                else
+                    client.portions.create({ingridient_id: ingridientId, size: @_portions[i]})
+                        .done((data) =>
+                            @saveConsist data.id, i
+                        )
+                        .fail((data) ->
+                            showFailMessage data
+                        )
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: saves the consists of dish
     #
     # portionId - The portion identifier as {number}.
     # i         - The index of curr portion as {number}.
     saveConsist: (portionId, i) ->
-        client.consists.read({portion_id: portionId, dish_id: @_dishId}).done (data) =>
-            #check consist existing
-            if data.length and checker.check data, "Checks existing consist for dish: #{@_dishId} and portion #{portionId}"
-            else
-                client.consists.create({portion_id: portionId, dish_id: @_dishId}).done (data) =>
-                    if checker.check data, 'Saving new consist'
-                        @saved.resolve()
+        client.consists.read({portion_id: portionId, dish_id: @_dishId})
+            .done((data) =>
+                #check consist existing
+                if data.length
+                else
+                    client.consists.create({portion_id: portionId, dish_id: @_dishId})
+                        .done((data) =>
+                            @saved.resolve()
+                        )
+                        .fail((data) ->
+                            showFailMessage data
+                        )
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: clears dish creating form
     #
@@ -756,13 +844,16 @@ IngridientInput = React.createClass
     componentDidMount: ->
         ingridients = []
 
-        client.ingridients.read().done (data) =>
-            return if not checker.check data, 'Read all ingridients for selector in add dish dialog'
+        client.ingridients.read()
+            .done((data) =>
+                for i in [0...data.length]
+                     ingridients.push <Ingridient ingridient={data[i]} updateSelected={@handleUpdate} />
 
-            for i in [0...data.length]
-                 ingridients.push <Ingridient ingridient={data[i]} updateSelected={@handleUpdate} />
-
-            @setState ingridientList: ingridients
+                @setState ingridientList: ingridients
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: render components to DOM
     #
@@ -824,15 +915,18 @@ Portion = React.createClass
 
     # Public: call after render
     componentDidMount: ->
-        client.units.read().done (data) =>
-            return if not checker.check data, 'Read all units in add dish dialog'
-
-            @setState
-                units: data
-                currUnit:
-                    id: data[@currUnitId].id
-                    name: data[@currUnitId].name
-            @props.updateUnit data[@currUnitId], @props.rowNo
+        client.units.read()
+            .done((data) =>
+                @setState
+                    units: data
+                    currUnit:
+                        id: data[@currUnitId].id
+                        name: data[@currUnitId].name
+                @props.updateUnit data[@currUnitId], @props.rowNo
+            )
+            .fail((data) ->
+                showFailMessage data
+            )
 
     # Public: change unit handled to click on button of unit type
     #
