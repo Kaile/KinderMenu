@@ -110,7 +110,6 @@ Menu = React.createClass
     # Returns the initial state of mutable properties as {object}.
     getInitialState: ->
         ingestions: []
-        menu: null
 
     # Public: call after render
     # componentWillMount: ->
@@ -164,7 +163,10 @@ Menu = React.createClass
                 </thead>
                 <MenuList ingestions={@state.ingestions} menuId={@props.menu.id}/>
             </table>
-            <div className="panel-footer">Итоговый состав:</div>
+            <div className="panel-footer">
+                Итоговый состав:
+                <FinalConsist menuId={@props.menu.id} />
+            </div>
         </div>
 
 # Public: list of menu elements.
@@ -315,6 +317,7 @@ DishLight = React.createClass
                     button.attr 'title' , 'Данное блюдо присутствует в меню'
                     return unless checker.check data, 'Add new dish in menu'
                     @props.changeDishList()
+                    $('#menu').trigger('dish-update')
                     new $.Informer 'Блюдо "' + button.text() + '" добавлено в меню', 'info'
                 )
                 .fail( (data) => 
@@ -358,9 +361,8 @@ Dish = React.createClass
                         new $.Informer "Блюдо '#{@props.dish.name}' было удалено из меню"
                         for item in @props.onDishChange
                             item.call()
+                        $('#menu').trigger('dish-update')
             )
-
-
 
     # Public: render components to DOM
     #
@@ -373,6 +375,30 @@ Dish = React.createClass
                 <ConsistList dishId={@props.dish.id}/>
             </p>
         </a>
+
+FinalConsist = React.createClass
+    propTypes: ->
+        menuId: React.PropTypes.number
+
+    getInitialState: ->
+        consist: []
+
+    componentDidMount: ->
+        @updateState()
+        $('#menu').on('dish-update', => 
+            @updateState())
+
+    updateState: ->
+        client.consists.read({menu_id: @props.menuId}).done (data) =>
+            consistList = [];
+            for item in data 
+                consistList.push <Consist consist={item} />
+            @setState consist: consistList
+
+    render: ->
+        <span>
+            {@state.consist}
+        </span>
 
 # Public: list of dish's consist.
 ConsistList = React.createClass
@@ -390,8 +416,8 @@ ConsistList = React.createClass
         client.consists.read(dish_id: @props.dishId).done (data) =>
             return if not checker.check data, 'Read consists by dish id'
 
-            for i in [0...data.length]
-                consists.push <Consist consist={data[i]} />
+            for item in data
+                consists.push <Consist consist={item} />
 
             @setState consistList: consists
 
