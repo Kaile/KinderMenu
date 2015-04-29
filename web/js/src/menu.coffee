@@ -1,4 +1,4 @@
-debugMode = on
+debugMode = off
 
 client = new $.RestClient '/v1/'
 
@@ -17,39 +17,6 @@ client.add 'menu-consists'
 checker = new $.Checker yes, debugMode
 
 dumper = new $.Dumper(debugMode)
-
-# Public: it calls save method from all pushed objects for save or update it.
-# @created 05.02.2015 23:35:12
-# @author Mihail Kornilov <fix-06 at yandex.ru>
-# @since 1.0
-class Saver
-    # Public: array of objects for saving as {array}.
-    objectList: []
-
-    # Public: add object to saving
-    #
-    # savedObject - The object that adds to save as {object}. Must to have save method
-    #
-    # Returns the true if save or undefined as {bool|undefined}.
-    add: (savedObject) ->
-        @objectList.push savedObject if typeof savedObject.save is 'function'
-
-    # Public: peform saving of all objects in list
-    #
-    # Returns the empty array as {array}.
-    save: ->
-        obj.save() for obj in @objectList
-        @objectList = []
-
-showFailMessage = (data) ->
-    message = data.responseJSON or data.responseText
-    if typeof message.join is 'function'
-        message = message.join "\n"
-    if debugMode
-        new $.Informer message, 'error'
-    else
-        new $.Informer 'При загрузке данных произошла ошибка'
-        console.log message
 
 # Public: mixin that handled change event.
 InputChangeMixin =
@@ -83,7 +50,7 @@ MenuOrder = React.createClass
                 @setState menuList: res
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     addMenu: ->
@@ -95,7 +62,7 @@ MenuOrder = React.createClass
                 @updateState()
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     render: ->
@@ -150,7 +117,7 @@ Menu = React.createClass
                 @setState ingestions: data
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
     #
     # componentWillReceiveProps: () ->
@@ -283,7 +250,7 @@ MenuDishList = React.createClass
                 @setState dishes: loadedDishes
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: render components to DOM
@@ -321,11 +288,11 @@ DishesLight = React.createClass
                             <DishLight dish={dish} {...@props} existingDishes={existingDishes} />
                     )
                     .fail((data) ->
-                    showFailMessage data
+                        checker.showFailMessage data
                     )
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     render: ->
@@ -361,7 +328,7 @@ DishLight = React.createClass
                     new $.Informer 'Блюдо "' + button.text() + '" добавлено в меню', 'info'
                 )
                 .fail((data) ->
-                    showFailMessage data
+                    checker.showFailMessage data
                 )
 
     render: ->
@@ -401,11 +368,11 @@ Dish = React.createClass
                             $('#menu').trigger('dishlist:update')
                         )
                         .fail((data) ->
-                            showFailMessage data
+                            checker.showFailMessage data
                         )
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: render components to DOM
@@ -441,7 +408,7 @@ FinalConsist = React.createClass
                 @setState consist: consistList
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     render: ->
@@ -470,7 +437,7 @@ ConsistList = React.createClass
                 @setState consistList: consists
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: render components to DOM
@@ -543,7 +510,7 @@ DishAddList = React.createClass
                 @setState dishAddList: dishList
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: render components to DOM
@@ -607,7 +574,7 @@ DishCreate = React.createClass
                 @saveIngridients()
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
         @saved
             .done(=>
@@ -615,7 +582,7 @@ DishCreate = React.createClass
                 @clearDishCreateForm()
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: validate saving data before save
@@ -656,11 +623,11 @@ DishCreate = React.createClass
                                         deferred.resolve()
                                     )
                                     .fail((data) ->
-                                        showFailMessage data
+                                        checker.showFailMessage data
                                     )
                         )
                         .fail((data) ->
-                            showFailMessage data
+                            checker.showFailMessage data
                         )
                 else
                     @savePortion @_ingridients[i].id, i
@@ -674,7 +641,7 @@ DishCreate = React.createClass
                     loopRecursion start + 1, stop
                 )
                 .fail((data) ->
-                    showFailMessage data
+                    checker.showFailMessage data
                 )
 
         loopRecursion 0, @_units.length - 1
@@ -696,11 +663,11 @@ DishCreate = React.createClass
                             @saveConsist data.id, i
                         )
                         .fail((data) ->
-                            showFailMessage data
+                            checker.showFailMessage data
                         )
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: saves the consists of dish
@@ -718,11 +685,11 @@ DishCreate = React.createClass
                             @saved.resolve()
                         )
                         .fail((data) ->
-                            showFailMessage data
+                            checker.showFailMessage data
                         )
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: clears dish creating form
@@ -859,7 +826,7 @@ IngridientInput = React.createClass
                 @setState ingridientList: ingridients
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: render components to DOM
@@ -932,7 +899,7 @@ Portion = React.createClass
                 @props.updateUnit data[@currUnitId], @props.rowNo
             )
             .fail((data) ->
-                showFailMessage data
+                checker.showFailMessage data
             )
 
     # Public: change unit handled to click on button of unit type
@@ -963,6 +930,3 @@ Portion = React.createClass
 
 
 React.render <MenuOrder />, $('#menu-order').get 0
-# React.render <Menu />, $('#menu').get 0
-#React.render <DishAdd />, $('#menu-dish-add').get 0
-#React.render <DishCreate />, $('#menu-dish-create').get 0

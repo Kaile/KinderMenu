@@ -36,6 +36,7 @@ AppAsset::register($this);
                 'options' => ['class' => 'navbar-nav navbar-right'],
                 'items' => [
                     ['label' => 'Меню', 'url' => ['/site/menu']],
+                    ['label' => 'Блюда', 'url' => ['/site/dishes']],
                 ],
             ]);
             NavBar::end();
@@ -52,7 +53,7 @@ AppAsset::register($this);
 
     <footer class="footer">
         <div class="container">
-            <p class="pull-left">&copy; <?=Yii::t('app', 'Kinder Menu')?> <?= date('Y') ?></p>
+            <p class="pull-left">&copy; Kinder Menu <?= date('Y') ?></p>
             <p class="pull-right"><?= Yii::powered() ?></p>
         </div>
     </footer>

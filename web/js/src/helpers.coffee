@@ -58,6 +58,16 @@ class Dumper
 
         resultOffset
 
+    showFailMessage: (data) ->
+        message = data.responseJSON or data.responseText
+        if typeof message.join is 'function'
+            message = message.join "\n"
+        if @debug
+            new $.Informer message, 'error'
+        else
+            new $.Informer 'При загрузке данных произошла ошибка'
+            console.log message
+
 # Public: show notify and write to console error when it occur
 # @created 25.01.2015 22:33:22
 # @author Mihail Kornilov <fix-06 at yandex.ru>

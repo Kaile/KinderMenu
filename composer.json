@@ -20,7 +20,8 @@
         "yiisoft/yii2-swiftmailer": "*",
         "bower-asset/react": "0.12.*",
         "bower-asset/jquery.rest": "~1.0",
-        "bower-asset/notifyjs": "0.3.*"
+        "bower-asset/notifyjs": "0.3.*",
+        "phpoffice/phpexcel": "~1.8"
     },
     "require-dev": {
         "yiisoft/yii2-codeception": "*",

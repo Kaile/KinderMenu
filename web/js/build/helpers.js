@@ -54,6 +54,20 @@ Dumper = (function() {
     return resultOffset;
   };
 
+  Dumper.prototype.showFailMessage = function(data) {
+    var message;
+    message = data.responseJSON || data.responseText;
+    if (typeof message.join === 'function') {
+      message = message.join("\n");
+    }
+    if (this.debug) {
+      return new $.Informer(message, 'error');
+    } else {
+      new $.Informer('При загрузке данных произошла ошибка');
+      return console.log(message);
+    }
+  };
+
   return Dumper;
 
 })();
